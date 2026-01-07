@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import IconCamera from './icons/IconCamera';
 import IconUpload from './icons/IconUpload';
 import IconSparkles from './icons/IconSparkles';
+import { api } from '../src/services/api';
 
 // Utility to convert file to base64
 const fileToBase64 = (file: File): Promise<string> => {
@@ -96,7 +96,11 @@ const PhotoVerification: React.FC = () => {
 
         try {
             const ai = getAIInstance();
-            const base64Data = capturedImage.split(',')[1];
+            // Remove data:image/jpeg;base64, prefix if present
+            const base64Data = capturedImage.includes(',') 
+                ? capturedImage.split(',')[1] 
+                : capturedImage;
+
             const imagePart = {
                 inlineData: {
                     mimeType: 'image/jpeg',
