@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Copy of NicheQuant - Vintage & Subculture Asset Platform",
+  "description": "NicheQuant is a trading and data platform for vintage clothing and subculture alternative assets, featuring a clean, modern, Apple-inspired design.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
