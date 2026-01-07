@@ -5,10 +5,20 @@ dotenv.config();
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/nichequant');
+    const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/nichequant';
+    console.log(`Attempting to connect to MongoDB...`);
+    // Mask the password in logs
+    const maskedURI = mongoURI.replace(/:([^:@]+)@/, ':****@');
+    console.log(`URI: ${maskedURI}`);
+
+    if (!mongoURI.startsWith('mongodb://') && !mongoURI.startsWith('mongodb+srv://')) {
+        throw new Error('Invalid MongoDB URI scheme. Expected mongodb:// or mongodb+srv://');
+    }
+
+    const conn = await mongoose.connect(mongoURI);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (err) {
-    console.error(`Error: ${err.message}`);
+    console.error(`MongoDB Connection Error: ${err.message}`);
     process.exit(1);
   }
 };
