@@ -1,3 +1,5 @@
+import { MOCK_PRODUCTS, MOCK_TESTIMONIALS, MOCK_CHART_DATA } from '../../constants';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Helper function to handle API requests
@@ -31,7 +33,13 @@ const fetchApi = async (endpoint: string, options: RequestInit = {}) => {
     
     return response.json();
   } catch (error) {
-    console.error('API Error:', error);
+    console.warn('API Error, falling back to mock data:', error);
+    // Mock Data Fallback
+    if (endpoint.includes('/products')) return MOCK_PRODUCTS;
+    if (endpoint.includes('/testimonials')) return MOCK_TESTIMONIALS;
+    if (endpoint.includes('/market-data')) return MOCK_CHART_DATA;
+    if (endpoint.includes('/auth/me')) return { name: 'Demo User', email: 'demo@example.com' };
+    
     throw error;
   }
 };
