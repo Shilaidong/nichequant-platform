@@ -3,6 +3,7 @@ services:
     name: nichequant-backend
     env: node
     plan: free
+    rootDir: backend
     buildCommand: npm install
     startCommand: node server.js
     envVars:
@@ -14,6 +15,8 @@ services:
         generateValue: true
       - key: NODE_ENV
         value: production
+      - key: GOOGLE_API_KEY
+        sync: false
 
 databases:
   - name: nichequant-db
