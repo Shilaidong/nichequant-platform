@@ -95,6 +95,7 @@ const PhotoVerification: React.FC = () => {
         setError('');
 
         try {
+            const ai = getAIInstance();
             const base64Data = capturedImage.split(',')[1];
             const imagePart = {
                 inlineData: {

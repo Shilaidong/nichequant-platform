@@ -9,23 +9,26 @@ import PriceValuation from './components/PriceValuation';
 import Testimonials from './components/Testimonials';
 import MarketData from './components/MarketData';
 import Footer from './components/Footer';
+import { AuthProvider } from './src/context/AuthContext';
 
 const App: React.FC = () => {
   return (
-    <div className="min-h-screen w-full">
-      <Header />
-      <main>
-        <Hero />
-        <Features />
-        <FeaturedItems />
-        <HowItWorks />
-        <PhotoVerification />
-        <PriceValuation />
-        <Testimonials />
-        <MarketData />
-      </main>
-      <Footer />
-    </div>
+    <AuthProvider>
+      <div className="min-h-screen w-full">
+        <Header />
+        <main>
+          <Hero />
+          <Features />
+          <FeaturedItems />
+          <HowItWorks />
+          <PhotoVerification />
+          <PriceValuation />
+          <Testimonials />
+          <MarketData />
+        </main>
+        <Footer />
+      </div>
+    </AuthProvider>
   );
 };
 
