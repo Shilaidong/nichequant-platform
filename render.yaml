@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: nichequant-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: MONGO_URI
+        fromDatabase:
+          name: nichequant-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+
+databases:
+  - name: nichequant-db
+    plan: free
+    databaseName: nichequant
+    user: nichequant_user
+

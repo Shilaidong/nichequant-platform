@@ -52,8 +52,8 @@ const MarketData: React.FC = () => {
           <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">市场指数概览</h2>
           <p className="text-slate-600 mt-4 max-w-2xl mx-auto text-lg">追踪亚文化资产的市场价值波动，把握投资时机。</p>
         </div>
-        <div className="bg-neutral-100/50 backdrop-blur-lg p-4 sm:p-8 rounded-2xl border border-neutral-200/80 shadow-lg shadow-neutral-500/10">
-          <div style={{ width: '100%', height: 400 }}>
+        <div className="bg-neutral-100/50 backdrop-blur-lg p-4 sm:p-8 rounded-2xl border border-neutral-200/80 shadow-lg shadow-neutral-500/10 h-[400px]">
+          <div style={{ width: '100%', height: '100%' }}>
             <ResponsiveContainer>
               <LineChart
                 data={chartData}

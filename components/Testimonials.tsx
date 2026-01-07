@@ -68,8 +68,8 @@ const Testimonials: React.FC = () => {
           <p className="text-slate-600 mt-4 max-w-2xl mx-auto text-lg">看看我们的社区成员如何评价NicheQuant。</p>
         </div>
          <div className="flex overflow-x-auto pb-8 -mx-6 px-6 no-scrollbar snap-x snap-mandatory">
-          {testimonials.map((testimonial) => (
-            <div key={testimonial._id} className="flex-shrink-0 w-96 mr-8 snap-center">
+          {testimonials.map((testimonial, index) => (
+            <div key={testimonial._id || index} className="flex-shrink-0 w-96 mr-8 snap-center">
                 <TestimonialCard testimonial={testimonial} />
             </div>
           ))}
