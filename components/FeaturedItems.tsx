@@ -1,94 +1,89 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import IconListing from './icons/IconListing';
 import { api } from '../src/services/api';
-import type { Product } from '../types';
-
-const ProductCard: React.FC<{ product: Product }> = ({ product }) => (
-  <div className="group w-80 flex-shrink-0 mr-8 snap-center">
-    <div className="overflow-hidden rounded-2xl bg-neutral-100/50 backdrop-blur-lg transition-all duration-500 cursor-pointer flex flex-col h-full border border-neutral-200/80 shadow-lg hover:shadow-xl shadow-neutral-500/10 hover:shadow-neutral-500/20">
-      <div className="overflow-hidden rounded-t-2xl">
-          <img src={product.imageUrl} alt={product.name} className="w-full h-96 object-cover group-hover:scale-105 transition-transform duration-500 ease-in-out" />
-      </div>
-      <div className="p-5 flex flex-col flex-grow">
-        <p className="text-slate-500 text-sm mb-1">{product.category}</p>
-        <h3 className="text-lg font-semibold text-slate-800 mb-3 flex-grow">{product.name}</h3>
-        <div className="flex items-center justify-between mt-auto pt-4 border-t border-neutral-200/80">
-          <div>
-            <p className="text-xs text-slate-500">当前价格</p>
-            <p className="text-xl font-bold text-slate-900">${product.price.toLocaleString()}</p>
-          </div>
-          <div className="text-right">
-              <img src={product.seller.avatarUrl} alt={product.seller.name} className="w-10 h-10 rounded-full ml-auto mb-1 border-2 border-white ring-1 ring-neutral-200/80" />
-              <p className="text-sm text-slate-700 font-medium">{product.seller.name}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
+import { Product } from '../types';
 
 const FeaturedItems: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const data = await api.products.getAll();
         setProducts(data);
-        setError(null);
-      } catch (err) {
-        setError('Failed to fetch products');
-        console.error(err);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     fetchProducts();
   }, []);
 
-  if (loading) {
-    return (
-      <section className="py-20 bg-transparent overflow-hidden">
-        <div className="container mx-auto px-6 text-center">
-          <p className="text-lg text-slate-600">Loading...</p>
-        </div>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section className="py-20 bg-transparent overflow-hidden">
-        <div className="container mx-auto px-6 text-center">
-          <p className="text-lg text-red-600">{error}</p>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section className="py-20 bg-transparent overflow-hidden">
+    <section className="py-20 bg-slate-50">
       <div className="container mx-auto px-6">
-        <div className="mb-12">
-          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">精选单品</h2>
-          <p className="text-slate-600 mt-3 max-w-2xl text-lg">发现来自全球的稀有古着与亚文化珍品。</p>
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">最新发售</h2>
+          <p className="text-slate-600 mt-4 max-w-2xl mx-auto text-lg">探索来自全球收藏家和商家的精选藏品。</p>
         </div>
-      </div>
-      <div className="container mx-auto px-6">
-          <div className="flex overflow-x-auto pb-8 -mx-6 px-6 no-scrollbar snap-x snap-mandatory">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-            <div className="flex-shrink-0 w-1"></div> {/* Spacer at the end */}
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div>
           </div>
-      </div>
-       <div className="container mx-auto px-6 text-center mt-8">
-            <button className="bg-slate-900 text-white px-8 py-3 rounded-full font-semibold hover:bg-slate-800 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg">
-                查看全部
-            </button>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {products.length > 0 ? (
+              products.map((item) => (
+                <div key={item._id || item.id} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-neutral-100 flex flex-col h-full">
+                  <div className="relative overflow-hidden aspect-[4/5]">
+                    <img 
+                      src={item.imageUrl} 
+                      alt={item.name} 
+                      className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-slate-900 shadow-sm">
+                      {item.category}
+                    </div>
+                  </div>
+                  <div className="p-6 flex flex-col flex-grow">
+                    <div className="flex items-center gap-3 mb-3">
+                      <img 
+                        src={item.seller?.avatarUrl || `https://ui-avatars.com/api/?name=${item.seller?.name || 'User'}&background=random`}
+                        alt={item.seller?.name}
+                        className="w-8 h-8 rounded-full border border-neutral-200"
+                      />
+                      <span className="text-sm text-slate-500 font-medium truncate">{item.seller?.name || 'Anonymous'}</span>
+                    </div>
+                    <h3 className="font-bold text-lg text-slate-900 mb-2 line-clamp-2 flex-grow group-hover:text-blue-600 transition-colors">
+                      {item.name}
+                    </h3>
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-neutral-100">
+                      <span className="text-xl font-bold text-slate-900">${item.price.toLocaleString()}</span>
+                      <button className="text-sm font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 transition-colors">
+                        查看详情 <IconListing className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12 text-slate-500">
+                暂无在售商品，快来发布第一个吧！
+              </div>
+            )}
+          </div>
+        )}
+        
+        <div className="text-center mt-16">
+          <button className="bg-white border border-neutral-300 text-slate-900 px-8 py-3 rounded-full font-semibold hover:bg-neutral-50 transition-all duration-300 transform hover:scale-105 shadow-sm inline-flex items-center gap-2">
+            查看更多商品 <IconListing className="w-4 h-4" />
+          </button>
         </div>
+      </div>
     </section>
   );
 };
