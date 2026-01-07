@@ -3,6 +3,7 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
 import FeaturedItems from './components/FeaturedItems';
+import LatestDrops from './components/LatestDrops';
 import HowItWorks from './components/HowItWorks';
 import PhotoVerification from './components/PhotoVerification';
 import PriceValuation from './components/PriceValuation';
@@ -19,6 +20,7 @@ const App: React.FC = () => {
         <main>
           <Hero />
           <Features />
+          <LatestDrops />
           <FeaturedItems />
           <HowItWorks />
           <PhotoVerification />
