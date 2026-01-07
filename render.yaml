@@ -8,19 +8,11 @@ services:
     startCommand: node server.js
     envVars:
       - key: MONGO_URI
-        fromDatabase:
-          name: nichequant-db
-          property: connectionString
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: NODE_ENV
         value: production
       - key: GOOGLE_API_KEY
         sync: false
-
-databases:
-  - name: nichequant-db
-    plan: free
-    databaseName: nichequant
-    user: nichequant_user
 
