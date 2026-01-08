@@ -96,8 +96,8 @@ export const api = {
   // AI Features
   ai: {
     verify: (data: { imageUrl: string; description: string }) =>
-      fetchApi('/ai/verify', { method: 'POST', body: JSON.stringify({ image: data.imageUrl, description: data.description }) }),
+      fetchApi('/ai/verify', { method: 'POST', body: JSON.stringify(data) }),
     valuate: (data: { name: string; category: string; description: string; imageUrl: string; condition: string }) =>
-      fetchApi('/ai/valuate', { method: 'POST', body: JSON.stringify({ image: data.imageUrl, ...data }) }),
+      fetchApi('/ai/valuate', { method: 'POST', body: JSON.stringify(data) }),
   },
 };
