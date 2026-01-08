@@ -1,101 +1,186 @@
-import React, { useState } from 'react';
-import { api } from '../src/services/api';
+import React, { useState, useRef, useEffect } from 'react';
+import { GoogleGenAI } from '@google/genai';
+import IconCamera from './icons/IconCamera';
+import IconUpload from './icons/IconUpload';
 import IconSparkles from './icons/IconSparkles';
 
+// Utility to convert file to base64
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = error => reject(error);
+    });
+};
+
 const PhotoVerification: React.FC = () => {
-    const [imageUrl, setImageUrl] = useState('');
-    const [description, setDescription] = useState('');
+    const [stream, setStream] = useState<MediaStream | null>(null);
+    const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [aiResponse, setAiResponse] = useState('');
     const [error, setError] = useState('');
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const getAIInstance = () => {
+        const apiKey = process.env.API_KEY;
+        if (!apiKey) {
+            throw new Error("Google Gemini API Key is missing. Please configure GEMINI_API_KEY in your environment variables.");
+        }
+        return new GoogleGenAI({ apiKey });
+    };
+
+    useEffect(() => {
+        if (stream && videoRef.current) {
+            videoRef.current.srcObject = stream;
+        }
+    }, [stream]);
+
+    const stopCamera = () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            setStream(null);
+        }
+    };
+    
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            stopCamera();
+        };
+    }, [stream]);
+
+
+    const handleStartCamera = async () => {
+        resetState();
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            setStream(mediaStream);
+        } catch (err) {
+            console.error("Error accessing camera: ", err);
+            setError("无法访问摄像头。请检查您的权限设置。");
+        }
+    };
+
+    const handleTakePhoto = () => {
+        if (videoRef.current && canvasRef.current) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            setCapturedImage(dataUrl);
+            stopCamera();
+        }
+    };
+    
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            resetState();
+            try {
+                 const base64Image = await fileToBase64(file);
+                 const dataUrl = `data:${file.type};base64,${base64Image}`;
+                 setCapturedImage(dataUrl);
+            } catch (err) {
+                console.error("Error reading file:", err);
+                setError("无法读取图片文件。");
+            }
+        }
+    };
 
     const handleAnalyzeImage = async () => {
-        if (!imageUrl) {
-            setError('请输入图片链接');
-            return;
-        }
+        if (!capturedImage) return;
 
         setIsLoading(true);
         setAiResponse('');
         setError('');
 
         try {
-            // Call backend API instead of frontend direct call
-            // Backend will fetch image and send to Gemini
-            const data = await api.ai.verify({
-                imageUrl,
-                description
-            });
+            const ai = getAIInstance();
+            const base64Data = capturedImage.split(',')[1];
+            const imagePart = {
+                inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: base64Data,
+                },
+            };
+            const textPart = {
+                text: "You are an expert authenticator specializing in vintage clothing, rare sneakers, and subculture collectibles. Analyze the following image and provide a brief authentication assessment. Identify the item, point out key characteristics (like stitching, tags, wear patterns), and give your opinion on its authenticity and potential era. Keep your analysis concise and easy to understand for a collector, in Chinese."
+            };
             
-            setAiResponse(data.verification);
+            const response = await ai.models.generateContent({
+                model: 'gemini-1.5-flash',
+                contents: { parts: [imagePart, textPart] },
+            });
 
-        } catch (err: any) {
+            setAiResponse(response.text);
+
+        } catch (err) {
             console.error("Error analyzing image: ", err);
-            setError(err.message || "AI分析失败，请检查链接是否有效。");
+            setError("AI分析失败，请稍后再试。");
         } finally {
             setIsLoading(false);
         }
     };
 
     const resetState = () => {
-        setImageUrl('');
-        setDescription('');
+        stopCamera();
+        setCapturedImage(null);
         setAiResponse('');
         setError('');
         setIsLoading(false);
+        if(fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
     
     return (
         <section id="ai-verify" className="py-20 bg-transparent">
             <div className="container mx-auto px-6">
                 <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">AI 即刻鉴定</h2>
-                    <p className="text-slate-600 mt-4 max-w-2xl mx-auto text-lg">输入图片链接，即时获取您藏品的专业鉴定意见。</p>
+                    <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">AI 即刻拍照鉴定</h2>
+                    <p className="text-slate-600 mt-4 max-w-2xl mx-auto text-lg">使用我们的AI技术，即时获取您藏品的专业鉴定意见。</p>
                 </div>
 
                 <div className="max-w-3xl mx-auto bg-neutral-100/50 backdrop-blur-lg p-8 rounded-2xl border border-neutral-200/80 shadow-lg shadow-neutral-500/10">
-                    
-                    <div className="space-y-4 mb-6">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">图片链接 (URL)</label>
-                            <input 
-                                type="url" 
-                                value={imageUrl}
-                                onChange={(e) => setImageUrl(e.target.value)}
-                                placeholder="https://example.com/image.jpg"
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
-                            />
-                        </div>
-                        
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">补充描述 (可选)</label>
-                            <textarea 
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                placeholder="例如：这是我在二手店买的 90 年代 Nike T恤..."
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 outline-none h-24 resize-none"
-                            />
-                        </div>
+                    <div className="aspect-video bg-neutral-200 rounded-lg mb-6 flex items-center justify-center overflow-hidden border border-neutral-300">
+                        {capturedImage && !stream && <img src={capturedImage} alt="Captured" className="w-full h-full object-contain" />}
+                        {stream && <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />}
+                        {!capturedImage && !stream && (
+                            <div className="text-center text-slate-500">
+                                <IconCamera className="mx-auto h-12 w-12 mb-2" />
+                                <p>摄像头预览将显示在此处</p>
+                            </div>
+                        )}
                     </div>
-
-                    {imageUrl && (
-                        <div className="mb-6 aspect-video bg-neutral-200 rounded-lg overflow-hidden border border-neutral-300">
-                             <img src={imageUrl} alt="Preview" className="w-full h-full object-contain" onError={() => setError('无法加载图片，请检查链接')} />
-                        </div>
-                    )}
+                    <canvas ref={canvasRef} className="hidden"></canvas>
+                    <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleFileChange} />
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        {!isLoading && !aiResponse && (
-                            <button onClick={handleAnalyzeImage} className="w-full sm:w-auto bg-slate-900 text-white px-8 py-3 rounded-full font-semibold hover:bg-slate-800 transition-all duration-300 shadow-md flex items-center justify-center gap-2">
-                                <IconSparkles className="h-5 w-5" /> 开始鉴定
-                            </button>
+                        {!stream && !capturedImage && (
+                             <>
+                                <button onClick={handleStartCamera} className="flex-1 bg-slate-900 text-white px-6 py-3 rounded-full font-semibold hover:bg-slate-800 transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center gap-2">
+                                    <IconCamera className="h-5 w-5" /> 开始拍照
+                                </button>
+                                 <button onClick={() => fileInputRef.current?.click()} className="flex-1 bg-white border border-neutral-300 text-slate-900 px-6 py-3 rounded-full font-semibold hover:bg-neutral-100 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2">
+                                    <IconUpload className="h-5 w-5" /> 上传图片
+                                </button>
+                            </>
                         )}
-                        
-                        {(aiResponse || error) && !isLoading && (
-                            <button onClick={resetState} className="w-full sm:w-auto bg-white border border-neutral-300 text-slate-900 hover:bg-neutral-100 px-8 py-3 rounded-full font-semibold transition-all duration-300">
-                                重置
-                            </button>
-                        )}
+                         {stream && <button onClick={handleTakePhoto} className="bg-red-500 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-red-600 transition-all duration-300 transform hover:scale-105 shadow-lg mx-auto">拍照</button>}
+                         {capturedImage && !aiResponse && !isLoading && (
+                            <>
+                                <button onClick={handleAnalyzeImage} className="flex-1 bg-slate-900 text-white px-6 py-3 rounded-full font-semibold hover:bg-slate-800 transition-all duration-300 transform hover:scale-105 shadow-md flex items-center justify-center gap-2">
+                                    <IconSparkles className="h-5 w-5" /> 分析图片
+                                </button>
+                                <button onClick={resetState} className="flex-1 bg-white border border-neutral-300 text-slate-900 hover:bg-neutral-100 transition-all duration-300 transform hover:scale-105 px-6 py-3 rounded-full font-semibold">重置</button>
+                            </>
+                         )}
                     </div>
                     
                     {isLoading && (
@@ -105,7 +190,7 @@ const PhotoVerification: React.FC = () => {
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span className="font-semibold">AI正在分析图片链接...</span>
+                                <span className="font-semibold">AI鉴定中，请稍候...</span>
                             </div>
                         </div>
                     )}
@@ -120,6 +205,11 @@ const PhotoVerification: React.FC = () => {
                             </h3>
                             <div className="bg-neutral-200/50 p-6 rounded-lg border border-neutral-300 text-slate-800 whitespace-pre-wrap leading-relaxed">
                                 {aiResponse}
+                            </div>
+                            <div className="text-center mt-6">
+                                <button onClick={resetState} className="bg-white border border-neutral-300 text-slate-900 hover:bg-neutral-100 px-6 py-2 rounded-full font-semibold transition-all duration-300">
+                                    再试一次
+                                </button>
                             </div>
                         </div>
                     )}
